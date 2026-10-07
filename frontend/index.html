@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Careline HMS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ================= LOGIN ================= -->
+
+  <section id="login">
+
+```
+<form id="loginForm" class="card login" novalidate>
+
+  <h1>Careline</h1>
+
+  <p class="muted">
+    Sign in to the hospital management system.
+  </p>
+
+  <!-- Email -->
+  <label>
+    Email
+    <input
+      name="email"
+      type="email"
+      autocomplete="email"
+      placeholder="Enter your email"
+      required
+    >
+  </label>
+
+  <!-- Password -->
+  <label>
+    Password
+    <input
+      name="password"
+      type="password"
+      autocomplete="current-password"
+      placeholder="Enter your password"
+      required
+    >
+  </label>
+
+  <!-- Login Error -->
+  <p id="loginErr" class="err" role="alert"></p>
+
+  <!-- Sign In -->
+  <button type="submit" class="btn">
+    Sign in
+  </button>
+
+</form>
+```
+
+  </section>
+
+  <!-- ================= MAIN APPLICATION ================= -->
+
+  <div id="app" hidden>
+
+```
+<!-- Sidebar -->
+<aside id="side">
+
+  <div class="brand">
+    Careline
+  </div>
+
+  <nav id="nav"></nav>
+
+</aside>
+
+
+<!-- Main Content -->
+<main>
+
+  <!-- Header -->
+  <header>
+
+    <div>
+      <b id="who"></b>
+      <span id="role" class="chip"></span>
+    </div>
+
+    <div class="row">
+
+      <!-- Notifications -->
+      <button
+        type="button"
+        class="btn ghost"
+        data-a="bell"
+        aria-label="Notifications"
+      >
+        Alerts
+        <span id="bellN" class="chip warn">0</span>
+      </button>
+
+      <!-- Logout -->
+      <button
+        type="button"
+        class="btn ghost"
+        data-a="logout"
+      >
+        Log out
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- Dynamic Application Content -->
+  <div id="view"></div>
+
+</main>
+```
+
+  </div>
+
+  <!-- ================= MODAL ================= -->
+
+  <div id="modal" hidden>
+
+```
+<div class="card sheet">
+
+  <h2 id="mTitle"></h2>
+
+  <div id="mBody"></div>
+
+</div>
+```
+
+  </div>
+
+  <!-- ================= TOAST ================= -->
+
+  <div id="toast" role="status"></div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+
+  <script src="app.js"></script>
+
+</body>
+</html>
