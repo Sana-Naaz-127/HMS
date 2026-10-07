@@ -3,7 +3,7 @@
 const $ = s => document.querySelector(s);
 
 const esc = s =>
-  String(s ?? '').replace(/[&<>\"']/g, c => ({
+  String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -106,30 +106,6 @@ async function loadDoctors() {
     start: d.start,
     end: d.end,
     leave: d.leave || []
-  }));
-}
-
-
-/* =========================================================
-   LOAD PATIENTS FROM MONGODB
-========================================================= */
-
-async function loadPatients() {
-
-  const data = await apiFetch('/patients');
-
-  DB.patients = (data.patients || []).map(p => ({
-    _id: p._id,
-    id: p.patientId,
-    n: p.name,
-    age: p.age,
-    g: p.gender,
-    phone: p.phone,
-    bg: p.bloodGroup || '',
-    allergy: p.allergies || '',
-    emg: p.emergencyContact || '',
-    active: p.active !== false,
-    user: p.user || null
   }));
 }
 
@@ -1220,44 +1196,47 @@ const V = {
             `
 
             : empty(
-              'No patients found.'
+              'No patients match your search.'
             )
         }
 
       </div>
 
 
-      ${
-        pages > 1
+      <div
+        class="row space"
+        style="margin-top:.75rem">
 
-          ? `
-            <div class="row center">
+        <span class="muted small">
 
-              <button
-                class="btn ghost"
-                data-a="page"
-                data-id="-1"
-                ${st.page <= 1 ? 'disabled' : ''}>
-                Previous
-              </button>
+          Page ${st.page}
+          of ${pages}
+          · ${list.length} patients
 
-              <span class="chip">
-                Page ${st.page} of ${pages}
-              </span>
+        </span>
 
-              <button
-                class="btn ghost"
-                data-a="page"
-                data-id="1"
-                ${st.page >= pages ? 'disabled' : ''}>
-                Next
-              </button>
 
-            </div>
-          `
+        <div class="row">
 
-          : ''
-      }
+          <button
+            class="btn sm ghost"
+            data-a="page"
+            data-id="-1"
+            ${st.page < 2 ? 'disabled' : ''}>
+            Previous
+          </button>
+
+          <button
+            class="btn sm ghost"
+            data-a="page"
+            data-id="1"
+            ${st.page >= pages ? 'disabled' : ''}>
+            Next
+          </button>
+
+        </div>
+
+      </div>
 
     `;
   },
@@ -1269,95 +1248,123 @@ const V = {
 
   doctors() {
 
+    const depts =
+      [
+        ...new Set(
+          DB.doctors.map(
+            d => d.dept
+          )
+        )
+      ];
+
+    const dn = [
+      'Sun',
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat'
+    ];
+
+
+    if (!DB.doctors.length) {
+
+      return `
+        <h2>Doctors</h2>
+        ${empty('No doctors found.')}
+      `;
+
+    }
+
+
     return `
 
-      <div class="row space">
+      <h2>Doctors</h2>
 
-        <h2>Doctors</h2>
+      ${depts.map(dp => `
 
-      </div>
+        <h3
+          style="margin-top:1rem">
+          ${esc(dp)}
+        </h3>
 
+        <div class="grid">
 
-      <div class="card wrap">
+          ${
+            DB.doctors
+              .filter(
+                d => d.dept === dp
+              )
+              .map(d => `
 
-        <table>
+                <div class="card">
 
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Department</th>
-            <th>Fee</th>
-            <th>Days</th>
-            <th>Timing</th>
-            <th>Leave</th>
-          </tr>
+                  <b>
+                    ${esc(d.name)}
+                  </b>
 
-          ${DB.doctors.map(d => `
+                  <div
+                    class="muted small">
+                    Fee ${money(d.fee)}
+                  </div>
 
-            <tr>
+                  <p class="small">
 
-              <td>
-                ${d.id}
-              </td>
+                    ${d.days
+                      .map(x => dn[x])
+                      .join(', ')}
 
-              <td>
-                ${esc(d.name)}
-              </td>
+                    <br>
 
-              <td>
-                ${esc(d.dept)}
-              </td>
+                    ${d.start}:00 –
+                    ${d.end}:00
 
-              <td>
-                ${money(d.fee)}
-              </td>
+                  </p>
 
-              <td>
-                ${d.days.map(x =>
-                  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][x]
-                ).join(', ')}
-              </td>
+                  ${
+                    d.leave.length
 
-              <td>
-                ${d.start}:00 - ${d.end}:00
-              </td>
+                      ? `
+                        <p class="small">
+                          On leave:
+                          ${d.leave.join(', ')}
+                        </p>
+                      `
 
-              <td>
+                      : ''
+                  }
 
-                ${
-                  d.leave.length
-                    ? d.leave.map(x =>
-                        `<span class="chip warn">${esc(x)}</span>`
-                      ).join(' ')
-                    : 'None'
-                }
+                  ${
+                    me.role === 'admin'
 
-                ${
-                  me.role === 'admin'
-                    ? `
-                      <button
-                        class="btn sm ghost"
-                        data-a="leave"
-                        data-id="${d.id}">
-                        Mark leave
-                      </button>
-                    `
-                    : ''
-                }
+                      ? `
+                        <button
+                          class="btn sm ghost"
+                          data-a="leave"
+                          data-id="${d.id}">
+                          Mark leave
+                        </button>
+                      `
 
-              </td>
+                      : ''
+                  }
 
-            </tr>
+                </div>
 
-          `).join('')}
+              `)
+              .join('')
+          }
 
-        </table>
+        </div>
 
-      </div>
+      `).join('')}
 
     `;
   },
-    /* =========================
+
+
+  /* =========================
      APPOINTMENTS
   ========================= */
 
@@ -2690,35 +2697,53 @@ const A = {
       'Add medical record',
 
       `
+
+      <div class="full">
+
         ${sel(
           'pid',
           'Patient',
           patOpts()
         )}
 
+      </div>
+
+
+      <div class="full">
+
         ${fld(
           'dx',
-          'Diagnosis',
-          '',
-          'text',
-          'required'
+          'Diagnosis'
         )}
+
+      </div>
+
+
+      <div class="full">
 
         ${fld(
           'rx',
-          'Prescription',
-          '',
-          'text',
-          'required'
+          'Prescription'
         )}
 
+      </div>
+
+
+      <div class="full">
+
         <label>
-          Notes
+
+          Treatment notes
+
           <textarea
             name="notes"
-            rows="4">
+            rows="3">
           </textarea>
+
         </label>
+
+      </div>
+
       `,
 
       f => {
@@ -2732,43 +2757,39 @@ const A = {
         }
 
 
-        const id =
-          DB.records.length + 1;
+        DB.records.push({
 
+          id:
+            DB.records.length + 1,
 
-        DB.records.unshift({
-
-          id,
-
-          pid: f.pid,
+          pid:
+            f.pid,
 
           did:
-            me.role === 'doctor'
-              ? me.did
-              : DB.appts.find(
-                  a =>
-                    a.pid === f.pid
-                )?.did || 1,
+            me.did || 1,
 
-          date: T,
+          date:
+            T,
 
-          dx: f.dx.trim(),
+          dx:
+            f.dx.trim(),
 
-          rx: f.rx.trim(),
+          rx:
+            f.rx.trim(),
 
           notes:
-            f.notes.trim()
+            f.notes
 
         });
 
 
         log(
-          `Added medical record #${id}`
+          `Added diagnosis for ${f.pid}`
         );
 
 
         toast(
-          'Medical record added'
+          'Record saved'
         );
 
       }
@@ -2776,7 +2797,9 @@ const A = {
     );
 
   },
-    /* =========================
+
+
+  /* =========================
      PRINT PRESCRIPTION
   ========================= */
 
@@ -2790,7 +2813,7 @@ const A = {
 
     printDoc(
 
-      'Prescription',
+      `Prescription`,
 
       `
 
@@ -3335,6 +3358,8 @@ A.go = async v => {
     q: ''
   };
 
+
+  /* Load real doctors from backend */
 
   if (v === 'doctors') {
 
